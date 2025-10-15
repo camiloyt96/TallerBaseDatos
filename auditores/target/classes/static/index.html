@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Auditores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.1em;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .main-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-bar {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 12px 12px 45px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+
+        .btn-refresh {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-refresh:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #6b7280;
+            font-size: 1.2em;
+        }
+
+        .no-data-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            background: #f9fafb;
+        }
+
+        .detail-cell {
+            padding: 20px !important;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85em;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1em;
+            color: #111827;
+        }
+
+        .btn-view {
+            padding: 6px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn-view:hover {
+            background: #5568d3;
+        }
+
+        @media (max-width: 768px) {
+            .section-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-bar {
+                min-width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn-refresh {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Consulta de Auditores</h1>
+            <p>Sistema de visualización y búsqueda de auditores</p>
+            <div class="status-indicator" id="statusIndicator">
+                ⚡ Conectando al servidor...
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="number" id="totalAuditores">-</div>
+                <div class="label">Total Auditores</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="sueldoPromedio">-</div>
+                <div class="label">Sueldo Promedio</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="puntajePromedio">-</div>
+                <div class="label">Puntaje Promedio</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="resultadosActuales">-</div>
+                <div class="label">Resultados Mostrados</div>
+            </div>
+        </div>
+
+        <div class="main-section">
+            <div class="section-header">
+                <h2 class="section-title">📊 Lista de Auditores</h2>
+                <div class="controls">
+                    <div class="search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre, RUT o apellido...">
+                    </div>
+                    <button class="btn-refresh" onclick="loadAuditores()">🔄 Actualizar</button>
+                </div>
+            </div>
+
+            <div class="filters">
+                <select class="filter-select" id="filterEstCivil" onchange="applyFilters()">
+                    <option value="">Todos los estados civiles</option>
+                    <option value="1">Soltero/a</option>
+                    <option value="2">Casado/a</option>
+                    <option value="3">Divorciado/a</option>
+                    <option value="4">Viudo/a</option>
+                </select>
+
+                <select class="filter-select" id="filterSueldo" onchange="applyFilters()">
+                    <option value="">Todos los sueldos</option>
+                    <option value="0-500000">Menos de $500.000</option>
+                    <option value="500000-1000000">$500.000 - $1.000.000</option>
+                    <option value="1000000-1500000">$1.000.000 - $1.500.000</option>
+                    <option value="1500000-999999999">Más de $1.500.000</option>
+                </select>
+
+                <select class="filter-select" id="sortBy" onchange="applyFilters()">
+                    <option value="">Ordenar por...</option>
+                    <option value="nombre">Nombre (A-Z)</option>
+                    <option value="nombre-desc">Nombre (Z-A)</option>
+                    <option value="sueldo">Sueldo (menor a mayor)</option>
+                    <option value="sueldo-desc">Sueldo (mayor a menor)</option>
+                    <option value="puntaje-desc">Puntaje (mayor a menor)</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>RUT</th>
+                            <th>Nombre Completo</th>
+                            <th>Estado Civil</th>
+                            <th>Sueldo</th>
+                            <th>Puntaje</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditoresTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">
+                                <div class="spinner"></div>
+                                <div>Cargando datos desde el servidor...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        let auditores = [];
+        let filteredAuditores = [];
+        let expandedRow = null;
+
+        const estadoCivilLabels = {
+            1: 'Soltero/a',
+            2: 'Casado/a',
+            3: 'Divorciado/a',
+            4: 'Viudo/a'
+        };
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_URL}/test`);
+                const data = await response.text();
+                showStatus(true, data);
+                await loadAuditores();
+            } catch (error) {
+                showStatus(false, 'Error: Servidor no disponible');
+                document.getElementById('auditoresTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="no-data">
+                            <div class="no-data-icon">❌</div>
+                            <div>No se pudo conectar con el servidor</div>
+                            <div style="font-size: 0.9em; margin-top: 10px; color: #ef4444;">
+                                ${error.message}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function showStatus(success, message) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = success ? '✅ ' + message : '❌ ' + message;
+            indicator.className = success ? 'status-indicator' : 'status-indicator error';
+        }
+
+        async function loadAuditores() {
+            try {
+                const response = await fetch(`${API_URL}/auditors`);
+                if (!response.ok) throw new Error('Error al obtener datos');
+                
+                auditores = await response.json();
+                filteredAuditores = [...auditores];
+                
+                updateStats();
+                renderTable(filteredAuditores);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('auditoresTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="no-data">
+                            <div class="no-data-icon">⚠️</div>
+                            <div>Error al cargar los datos</div>
+                            <div style="font-size: 0.9em; margin-top: 10px;">${error.message}</div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateStats() {
+            const total = auditores.length;
+            const sueldoPromedio = total > 0 
+                ? Math.round(auditores.reduce((sum, a) => sum + a.sueldo, 0) / total)
+                : 0;
+            
+            const auditoresConPuntaje = auditores.filter(a => a.puntaje !== null);
+            const puntajePromedio = auditoresConPuntaje.length > 0
+                ? (auditoresConPuntaje.reduce((sum, a) => sum + a.puntaje, 0) / auditoresConPuntaje.length).toFixed(1)
+                : 0;
+
+            document.getElementById('totalAuditores').textContent = total;
+            document.getElementById('sueldoPromedio').textContent = '$' + sueldoPromedio.toLocaleString('es-CL');
+            document.getElementById('puntajePromedio').textContent = puntajePromedio;
+            document.getElementById('resultadosActuales').textContent = filteredAuditores.length;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('auditoresTableBody');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="no-data">
+                            <div class="no-data-icon">📭</div>
+                            <div>No se encontraron auditores</div>
+                            <div style="font-size: 0.9em; margin-top: 10px;">
+                                ${auditores.length > 0 ? 'Intenta ajustar los filtros de búsqueda' : 'No hay registros en la base de datos'}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = data.map((auditor, index) => `
+                <tr>
+                    <td><span class="badge badge-info">${auditor.idAuditor || 'N/A'}</span></td>
+                    <td><strong>${formatRUT(auditor.numrun, auditor.dvRun)}</strong></td>
+                    <td>${auditor.nombre} ${auditor.appaterno} ${auditor.apmaterno}</td>
+                    <td>${estadoCivilLabels[auditor.codEstCivil] || 'N/A'}</td>
+                    <td><strong>$${auditor.sueldo.toLocaleString('es-CL')}</strong></td>
+                    <td>${auditor.puntaje ? `<span class="badge badge-success">${auditor.puntaje}</span>` : '<span class="badge badge-warning">Sin puntaje</span>'}</td>
+                    <td><button class="btn-view" onclick="toggleDetails(${index})">👁️ Ver más</button></td>
+                </tr>
+                <tr id="detail-${index}" class="detail-row" style="display: none;">
+                    <td colspan="7" class="detail-cell">
+                        ${generateDetailView(auditor)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function generateDetailView(auditor) {
+            return `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">🆔 ID Auditor</div>
+                        <div class="detail-value">${auditor.idAuditor || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📋 RUT Completo</div>
+                        <div class="detail-value">${formatRUT(auditor.numrun, auditor.dvRun)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">👤 Nombre</div>
+                        <div class="detail-value">${auditor.nombre}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">👤 Apellido Paterno</div>
+                        <div class="detail-value">${auditor.appaterno}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">👤 Apellido Materno</div>
+                        <div class="detail-value">${auditor.apmaterno}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">💼 Código Profesión</div>
+                        <div class="detail-value">${auditor.codProfesion}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🏘️ Código Comuna</div>
+                        <div class="detail-value">${auditor.codComuna || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">💍 Estado Civil</div>
+                        <div class="detail-value">${estadoCivilLabels[auditor.codEstCivil]}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">💰 Sueldo</div>
+                        <div class="detail-value">$${auditor.sueldo.toLocaleString('es-CL')}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">⭐ Puntaje</div>
+                        <div class="detail-value">${auditor.puntaje || 'Sin puntaje'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🏦 Código AFP</div>
+                        <div class="detail-value">${auditor.codAfp}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🏥 Código ISAPRE</div>
+                        <div class="detail-value">${auditor.codIsapre}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📄 Tipo Contrato</div>
+                        <div class="detail-value">${auditor.codIpContrato || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">👨‍💼 RUT Supervisor</div>
+                        <div class="detail-value">${auditor.numrunSup || 'Sin supervisor'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleDetails(index) {
+            const detailRow = document.getElementById(`detail-${index}`);
+            if (expandedRow !== null && expandedRow !== index) {
+                document.getElementById(`detail-${expandedRow}`).style.display = 'none';
+            }
+            
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+                expandedRow = index;
+            } else {
+                detailRow.style.display = 'none';
+                expandedRow = null;
+            }
+        }
+
+        function formatRUT(numrun, dvRun) {
+            if (!numrun) return 'N/A';
+            return `${numrun.toLocaleString('es-CL')}-${dvRun}`;
+        }
+
+        function applyFilters() {
+            let filtered = [...auditores];
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const estCivil = document.getElementById('filterEstCivil').value;
+            const sueldoRange = document.getElementById('filterSueldo').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            if (searchTerm) {
+                filtered = filtered.filter(auditor =>
+                    auditor.nombre.toLowerCase().includes(searchTerm) ||
+                    auditor.appaterno.toLowerCase().includes(searchTerm) ||
+                    auditor.apmaterno.toLowerCase().includes(searchTerm) ||
+                    auditor.numrun.toString().includes(searchTerm)
+                );
+            }
+
+            if (estCivil) {
+                filtered = filtered.filter(a => a.codEstCivil == estCivil);
+            }
+
+            if (sueldoRange) {
+                const [min, max] = sueldoRange.split('-').map(Number);
+                filtered = filtered.filter(a => a.sueldo >= min && a.sueldo <= max);
+            }
+
+            if (sortBy) {
+                switch(sortBy) {
+                    case 'nombre':
+                        filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+                        break;
+                    case 'nombre-desc':
+                        filtered.sort((a, b) => b.nombre.localeCompare(a.nombre));
+                        break;
+                    case 'sueldo':
+                        filtered.sort((a, b) => a.sueldo - b.sueldo);
+                        break;
+                    case 'sueldo-desc':
+                        filtered.sort((a, b) => b.sueldo - a.sueldo);
+                        break;
+                    case 'puntaje-desc':
+                        filtered.sort((a, b) => (b.puntaje || 0) - (a.puntaje || 0));
+                        break;
+                }
+            }
+
+            filteredAuditores = filtered;
+            document.getElementById('resultadosActuales').textContent = filtered.length;
+            renderTable(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+        window.addEventListener('load', checkConnection);
+    </script>
+</body>
+</html>

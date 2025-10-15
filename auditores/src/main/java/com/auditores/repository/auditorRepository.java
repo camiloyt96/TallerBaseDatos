@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.auditores.model.Auditor;
 
 @Repository
-public interface AuditorRepository extends JpaRepository<Auditor, Long> {
+public interface auditorRepository extends JpaRepository<Auditor, Long> {
     
 }

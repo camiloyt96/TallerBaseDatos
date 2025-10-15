@@ -2,17 +2,19 @@ package com.auditores.Controller;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.CrossOrigin;  // ← AGREGAR ESTA LÍNEA
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.auditores.Service.AuditorService;
+import com.auditores.Service.auditorService;
 import com.auditores.model.Auditor;
 
 @RestController
+@CrossOrigin(origins = "*")  // ← AGREGAR ESTA LÍNEA
 public class AuditorController {
-    private final AuditorService auditorService;
+    private final auditorService auditorService;
 
-    public AuditorController(AuditorService auditorService) {
+    public AuditorController(auditorService auditorService) {
         this.auditorService = auditorService;
     }
 
